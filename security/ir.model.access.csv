@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_nw_part_category_user,nockworks.part.category user,model_nockworks_part_category,base.group_user,1,0,0,0
+access_nw_part_category_manager,nockworks.part.category manager,model_nockworks_part_category,stock.group_stock_manager,1,1,1,1
+access_nw_part_type_user,nockworks.part.type user,model_nockworks_part_type,base.group_user,1,0,0,0
+access_nw_part_type_manager,nockworks.part.type manager,model_nockworks_part_type,stock.group_stock_manager,1,1,1,1
+

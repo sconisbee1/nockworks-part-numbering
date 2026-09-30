@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_nw_part_numbering_root" name="NockWorks Part Numbering" parent="stock.menu_stock_config_settings" sequence="45" groups="stock.group_stock_manager"/>
+    <menuitem id="menu_nw_part_categories" name="Part Categories" parent="menu_nw_part_numbering_root" action="action_nw_part_categories" sequence="10" groups="stock.group_stock_manager"/>
+    <menuitem id="menu_nw_part_types" name="Part Types" parent="menu_nw_part_numbering_root" action="action_nw_part_types" sequence="20" groups="stock.group_stock_manager"/>
+</odoo>
+
