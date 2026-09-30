@@ -5,9 +5,6 @@
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_form_view"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='default_code'][1]" position="attributes">
-                <attribute name="readonly">nw_part_number_assigned</attribute>
-            </xpath>
             <xpath expr="//sheet/notebook" position="before">
                 <group string="NockWorks Part Number" name="nw_part_numbering">
                     <field name="product_variant_count" invisible="True"/>
@@ -31,9 +28,6 @@
         <field name="model">product.product</field>
         <field name="inherit_id" ref="product.product_normal_form_view"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='default_code'][last()]" position="attributes">
-                <attribute name="readonly">nw_part_number_assigned</attribute>
-            </xpath>
             <xpath expr="//sheet/notebook" position="before">
                 <group string="NockWorks Part Number" name="nw_part_numbering_variant">
                     <field name="nw_part_number_assigned" invisible="True"/>
