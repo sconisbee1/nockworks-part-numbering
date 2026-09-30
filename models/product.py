@@ -134,6 +134,28 @@ class ProductTemplate(models.Model):
         string="Part Number Assigned", compute="_compute_nw_variant_fields", readonly=True
     )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Carry classifications entered on a new template to its first SKU.
+
+        The template fields are non-stored proxies.  Their normal inverse runs
+        before product.template.create has finished creating the first variant,
+        so an explicit post-create transfer is required for the New Product form.
+        """
+        staged_classifications = [
+            {
+                field_name: vals[field_name]
+                for field_name in ("nw_part_category_id", "nw_part_type_id")
+                if field_name in vals
+            }
+            for vals in vals_list
+        ]
+        templates = super().create(vals_list)
+        for template, classification in zip(templates, staged_classifications):
+            if classification and len(template.product_variant_ids) == 1:
+                template.product_variant_ids.write(classification)
+        return templates
+
     @api.depends(
         "product_variant_ids.nw_part_category_id",
         "product_variant_ids.nw_part_type_id",
@@ -183,4 +205,3 @@ class ProductTemplate(models.Model):
                 values["default_code"] = False
             variant.with_context(nw_numbering_internal=True).write(values)
         return new_template
-

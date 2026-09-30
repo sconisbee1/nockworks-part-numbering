@@ -54,6 +54,21 @@ class TestNockWorksPartNumbering(TransactionCase):
         self.assertTrue(product.nw_part_number_assigned)
         self.assertEqual(self.part_type.next_number, 2)
 
+    def test_new_template_classification_reaches_single_variant(self):
+        template = self.env["product.template"].create(
+            {
+                "name": "Created from the normal Product form",
+                "nw_part_category_id": self.category.id,
+                "nw_part_type_id": self.part_type.id,
+            }
+        )
+        self.assertEqual(template.product_variant_count, 1)
+        self.assertEqual(template.product_variant_id.nw_part_category_id, self.category)
+        self.assertEqual(template.product_variant_id.nw_part_type_id, self.part_type)
+        template.action_generate_nw_part_number()
+        self.assertEqual(template.nw_part_number, "100-03-0001")
+        self.assertEqual(template.default_code, template.nw_part_number)
+
     def test_separate_sequences(self):
         other_type = self.Type.create({"name": "Other", "code": "04", "category_id": self.category.id})
         first = self._product(nw_part_category_id=self.category.id, nw_part_type_id=self.part_type.id)
