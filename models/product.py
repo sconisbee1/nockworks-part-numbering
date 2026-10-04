@@ -18,19 +18,14 @@ class ProductProduct(models.Model):
         string="Part Number Assigned", readonly=True, copy=False, default=False, index=True
     )
 
-    _sql_constraints = [
-        (
-            "nw_part_number_unique",
-            "unique(nw_part_number)",
-            "The NockWorks part number must be unique.",
-        ),
-        (
-            "nw_assignment_consistent",
-            "check((nw_part_number_assigned AND nw_part_number IS NOT NULL) OR "
-            "(NOT nw_part_number_assigned AND nw_part_number IS NULL))",
-            "The NockWorks assignment flag and part number must be consistent.",
-        ),
-    ]
+    _nw_part_number_unique = models.Constraint(
+        "unique(nw_part_number)", "The NockWorks part number must be unique."
+    )
+    _nw_assignment_consistent = models.Constraint(
+        "check((nw_part_number_assigned AND nw_part_number IS NOT NULL) OR "
+        "(NOT nw_part_number_assigned AND nw_part_number IS NULL))",
+        "The NockWorks assignment flag and part number must be consistent.",
+    )
 
     @api.constrains("nw_part_category_id", "nw_part_type_id")
     def _check_part_classification(self):

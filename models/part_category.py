@@ -15,13 +15,12 @@ class NockWorksPartCategory(models.Model):
     description = fields.Text()
     type_ids = fields.One2many("nockworks.part.type", "category_id", string="Part Types")
 
-    _sql_constraints = [
-        ("code_unique", "unique(code)", "The part category code must be unique."),
-    ]
+    _code_unique = models.Constraint(
+        "unique(code)", "The part category code must be unique."
+    )
 
     @api.constrains("code")
     def _check_code(self):
         for category in self:
             if not re.fullmatch(r"[0-9]{3}", category.code or ""):
                 raise ValidationError(_("Part Category code must contain exactly three digits."))
-

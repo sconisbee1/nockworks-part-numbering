@@ -20,18 +20,14 @@ class NockWorksPartType(models.Model):
     next_number = fields.Integer(default=1, required=True)
     sequence_exhausted = fields.Boolean(default=False, readonly=True, copy=False)
 
-    _sql_constraints = [
-        (
-            "category_code_unique",
-            "unique(category_id, code)",
-            "The Part Type code must be unique within its Part Category.",
-        ),
-        (
-            "next_number_range",
-            "check(next_number >= 1 AND next_number <= 9999)",
-            "The next number must be between 1 and 9999.",
-        ),
-    ]
+    _category_code_unique = models.Constraint(
+        "unique(category_id, code)",
+        "The Part Type code must be unique within its Part Category.",
+    )
+    _next_number_range = models.Constraint(
+        "check(next_number >= 1 AND next_number <= 9999)",
+        "The next number must be between 1 and 9999.",
+    )
 
     @api.constrains("code")
     def _check_code(self):
@@ -85,4 +81,3 @@ class NockWorksPartType(models.Model):
                 )
             )
         return row[0]
-

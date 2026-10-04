@@ -1,6 +1,6 @@
 # NockWorks Part Numbering
 
-`nockworks_part_numbering` adds permanent engineering/SKU part numbers to Odoo 18 Community without changing or reusing Odoo's accounting and inventory `product.category` hierarchy.
+`nockworks_part_numbering` adds permanent engineering/SKU part numbers to Odoo 19 Community without changing or reusing Odoo's accounting and inventory `product.category` hierarchy.
 
 ## Number format
 
@@ -16,7 +16,7 @@ The assigned number is written both to the module's immutable Part Number field 
 
 `nockworks.part.category` and `nockworks.part.type` are independent engineering classifications. They do not inherit from, modify, or replace `product.category`.
 
-Odoo 18 stores `default_code` on `product.product`; `product.template.default_code` is a computed/inverse convenience field for a template with one variant. Accordingly, the authoritative NockWorks fields and allocation action are on `product.product`, so each physical variant can receive its own number. `product.template` exposes proxy fields and the same button only when it has exactly one variant. For a multi-variant template, open each Product Variant and generate its number there.
+Odoo 19 stores `default_code` on `product.product`; `product.template.default_code` is a computed/inverse convenience field for a template with one variant. Accordingly, the authoritative NockWorks fields and allocation action are on `product.product`, so each physical variant can receive its own number. New templates accept classification before saving; existing single-variant templates expose proxy fields and a generation button. For a multi-variant template, open each Product Variant and generate its number there.
 
 ## Sequence and concurrency safety
 
@@ -25,6 +25,18 @@ Allocation is a single conditional PostgreSQL `UPDATE ... RETURNING` against the
 `next_number` cannot be decreased, deletion and archival never alter it, and an exhausted sequence cannot be restarted. Failed transactions roll back both the product assignment and reservation together.
 
 ## Installation
+
+The `main` branch targets Odoo 19 Community. For Git deployment, clone the
+repository into your addons directory using the module's technical name:
+
+```sh
+git clone https://github.com/sconisbee1/nockworks-part-numbering.git nockworks_part_numbering
+```
+
+This addon does not upgrade an Odoo 18 database to Odoo 19. Migrate the Odoo
+database separately, then install or upgrade this addon on Odoo 19. The original
+Odoo 18 implementation remains available in Git history at commit `426c76a`.
+The Odoo 19 release uses `models.Constraint` for its database constraints.
 
 1. Copy `nockworks_part_numbering` into a configured custom addons directory.
 2. Restart Odoo and update the Apps list.
@@ -52,7 +64,7 @@ Duplicating a product or template never copies its assigned NockWorks number. If
 
 ## Tests
 
-Run with an Odoo 18 source checkout and test database, for example:
+Run with an Odoo 19 source checkout and test database, for example:
 
 ```text
 odoo-bin -d test_db --addons-path=addons,/path/to/custom-addons \
