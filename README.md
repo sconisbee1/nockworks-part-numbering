@@ -26,11 +26,12 @@ Allocation is a single conditional PostgreSQL `UPDATE ... RETURNING` against the
 
 ## Installation
 
-The `main` branch targets Odoo 19 Community. For Git deployment, clone the
-repository into your addons directory using the module's technical name:
+The `main` branch targets Odoo 19 Community. The actual addon is now in the
+`nockworks_part_numbering/` subdirectory. See [INSTALL_ODOO19.md](INSTALL_ODOO19.md)
+for the Docker and native deployment instructions. Clone the repository with:
 
 ```sh
-git clone https://github.com/sconisbee1/nockworks-part-numbering.git nockworks_part_numbering
+git clone https://github.com/sconisbee1/nockworks-part-numbering.git
 ```
 
 This addon does not upgrade an Odoo 18 database to Odoo 19. Migrate the Odoo
@@ -38,7 +39,7 @@ database separately, then install or upgrade this addon on Odoo 19. The original
 Odoo 18 implementation remains available in Git history at commit `426c76a`.
 The Odoo 19 release uses `models.Constraint` for its database constraints.
 
-1. Copy `nockworks_part_numbering` into a configured custom addons directory.
+1. Copy the inner `nockworks_part_numbering` directory into a configured custom addons directory, or mount it directly in Docker. Alternatively add the repository root itself to `addons_path`.
 2. Restart Odoo and update the Apps list.
 3. Install **NockWorks Part Numbering**.
 

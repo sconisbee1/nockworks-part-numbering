@@ -1,7 +1,7 @@
 {
     "name": "NockWorks Part Numbering",
     "summary": "Concurrency-safe engineering part numbers for product SKUs",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Inventory/Inventory",
     "license": "LGPL-3",
     "author": "NockWorks Innovations",
@@ -14,5 +14,5 @@
         "views/menus.xml",
     ],
     "installable": True,
-    "application": False,
+    "application": True,
 }
