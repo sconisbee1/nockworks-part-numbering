@@ -19,7 +19,7 @@ Implemented addon: `19.0.2.0.0`.
 |---|---|
 | Clean installation of current addon with stock/MRP/sales/purchase | Passed |
 | Clean-install model and Chrome suite before final migration edge-case test | 28 tests, 0 failed, 0 errors |
-| Final complete addon suite | 29 tests, 0 failed, 0 errors; browser executed, not skipped |
+| Final complete addon suite | 30 tests, 0 failed, 0 errors; browser executed, not skipped |
 | Native Variants smart button → list → easy-edit form | Chrome tour succeeded |
 | Separate committed PostgreSQL connections | 6 dynamic native variants through 2 simultaneous workers; suffixes 01–06, no duplicates |
 | Real old-addon installation → upgrade to final implementation | Passed |
@@ -33,7 +33,7 @@ multiple attributes, reorder, archive/reactivate (single and multi), deletion an
 recreation, copying and copy-context security, namespace collisions, permanent
 ledger protections, fake RPC context flags, imports, direct attribute-line
 creation, controlled conversion, exhaustion/rollback, dynamic/no-variant
-attributes, database constraints, inherited views, stock/MRP/work orders and
+attributes (including later non-variant edits), database constraints, inherited views, stock/MRP/work orders and
 variant-specific BoMs. Migration tests also cover idempotent metadata adoption
 and preserving unissued classification without allocating a number.
 

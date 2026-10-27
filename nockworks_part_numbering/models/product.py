@@ -200,7 +200,7 @@ class ProductTemplate(models.Model):
         for template in self:
             if template.nw_numbering_state != 'none' and any(key in vals and vals[key] != template[key].id for key in CLASSIFICATION):
                 raise ValidationError(_('Issued family classifications are immutable.'))
-            if template.nw_numbering_state in ('single', 'legacy') and 'attribute_line_ids' in vals:
+            if template.nw_numbering_state == 'legacy' and 'attribute_line_ids' in vals:
                 raise UserError(_('Use controlled conversion before changing attributes of an issued single SKU. Legacy multi-SKU families require separate review.'))
         result = super().write(vals)
         # Explicit classification changes opt an unnumbered family into numbering.

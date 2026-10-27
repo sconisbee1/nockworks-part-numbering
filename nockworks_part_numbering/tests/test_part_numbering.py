@@ -331,3 +331,14 @@ class TestNockWorksPartNumbering(TransactionCase):
         self.assertFalse(template.nw_base_part_number)
         self.assertFalse(product.default_code)
         self.assertEqual(template.nw_numbering_state, 'none')
+
+    def test_non_variant_attribute_edit_keeps_issued_single_reference(self):
+        template = self._template()
+        product = template.product_variant_id
+        reference = product.default_code
+        attribute = self.env['product.attribute'].create({'name': 'Customer text', 'create_variant': 'no_variant'})
+        values = self.env['product.attribute.value'].create([{'name': name, 'attribute_id': attribute.id} for name in ('A', 'B')])
+        template.write({'attribute_line_ids': [(0, 0, {'attribute_id': attribute.id, 'value_ids': [(6, 0, values.ids)]})]})
+        self.assertEqual(template.product_variant_id, product)
+        self.assertEqual(product.default_code, reference)
+        self.assertFalse(product.nw_variant_number)
