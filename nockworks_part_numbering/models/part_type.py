@@ -2,6 +2,7 @@ import re
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from .capability import require_internal
 
 
 class NockWorksPartType(models.Model):
@@ -58,6 +59,8 @@ class NockWorksPartType(models.Model):
 
     def _allocate_next_number(self):
         """Atomically reserve and return one number from this classification."""
+        require_internal(self.env)
+        self.check_access('read')
         self.ensure_one()
         self.env.cr.execute(
             """

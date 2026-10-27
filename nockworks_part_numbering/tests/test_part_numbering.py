@@ -190,6 +190,13 @@ class TestNockWorksPartNumbering(TransactionCase):
         template = self.env['product.template'].create({'name': 'Old issued single'})
         product = template.product_variant_id
         # Reproduce old-version stored data, without calling the new numbering service.
+        # Recreate the old schema boundary, rather than corrupt an already protected DB.
+        from odoo.addons.nockworks_part_numbering.hooks import TRIGGERS
+        self.env.flush_all()
+        self.env.cr.execute('SET CONSTRAINTS ALL IMMEDIATE')
+        self.env.cr.execute('SET CONSTRAINTS ALL DEFERRED')
+        for table, trigger in TRIGGERS:
+            self.env.cr.execute('DROP TRIGGER IF EXISTS %s ON %s' % (trigger, table))
         self.env.cr.execute('''UPDATE product_product SET nw_part_number = '150-01-0042',
             nw_part_number_assigned = TRUE, default_code = '150-01-0042', nw_part_category_id = %s,
             nw_part_type_id = %s WHERE id = %s''', [self.category.id, self.part_type.id, product.id])

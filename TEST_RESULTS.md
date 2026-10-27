@@ -59,3 +59,21 @@ Production data, installed custom NockWorks addons, external integrations and
 the deployed Odoo revision were not accessed. A restored-production staging
 rehearsal and separate deployment/conversion approvals remain necessary.
 No merge or production deployment has occurred.
+
+## Pre-merge integrity verification
+
+The final expanded suite passed **67 tests**, with zero failures/errors. It adds
+37 tests over the original 30, covering manual departure/reclaim, deletion,
+family cascades, SQL ownership/immutability, NULL handling, private ORM/RPC access,
+protected context defaults, provenance checks and repeated initialization.
+
+Independent transactions also passed native suffix allocation, a competing
+manual-reference race and rejection of an invalid final state on real COMMIT.
+Both original-main and exact-3270759 intermediate databases were upgraded and
+repeatedly verified after tracked V200 conversion. Detailed evidence, confirmed
+before-fix failures and limits are recorded in INTEGRITY_REVIEW.md.
+
+Raw local evidence: integrity-before.log, integrity-cascade-before.log,
+integrity-rpc-327.log, integrity-context-before.log, integrity-clean.log,
+integrity-release-suite.log, integrity-concurrency.log, integrity-check-main.log,
+integrity-review-check.log and nw_integrity_*-verify-*.log. These logs are Git-ignored.

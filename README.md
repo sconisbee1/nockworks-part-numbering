@@ -1,6 +1,6 @@
 # NockWorks Part Numbering — Odoo 19
 
-Version `19.0.2.0.0` extends the existing addon with product-family numbering.
+Version `19.0.2.1.0` extends the existing addon with product-family numbering.
 The runtime dependency remains `stock`; Manufacturing, Sales and Purchasing use
 native `product.product.default_code` and product IDs.
 
@@ -95,3 +95,12 @@ See [DEPLOYMENT.md](DEPLOYMENT.md), [TESTING.md](TESTING.md) and
 [ARCHITECTURE.md](ARCHITECTURE.md). The actual addon remains the inner
 `nockworks_part_numbering/` directory; existing category/type configuration and
 base allocation are retained.
+
+## Pre-merge integrity hardening
+
+See [INTEGRITY_REVIEW.md](INTEGRITY_REVIEW.md) for the review of commit 3270759,
+confirmed defects, corrections and expanded test evidence. Leaving a manual
+managed-format reference now retires it permanently, including for the same SKU.
+Archival preserves ownership. The database validates the final ledger/SKU/family
+state at commit, and protected RPC context defaults cannot forge assignments.
+The 2.1 migration changes metadata and guards only; it never renumbers products.

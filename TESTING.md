@@ -36,3 +36,11 @@ stock quantity, lot, MO, finished moves, BoM and sequence counter.
 GitHub Actions runs the same harness on feature-branch pushes and pull requests.
 Local test results are recorded in `TEST_RESULTS.md`; a workflow file is not
 itself evidence that hosted CI has run.
+
+The integrity extension additionally upgrades a clone through exact commit
+3270759, reproduces old departed references/deletions, converts V200 with tracked
+history under both old and current implementations, and compares all SQL guard,
+function, constraint and index definitions after repeated upgrades. The optional
+rpc_before_fix.py script is a deliberately successful reproduction for an isolated
+2.0.0 test database only; it must not be used against production. Corrected RPC
+rejection is covered by the normal model suite.

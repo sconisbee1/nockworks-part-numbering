@@ -4,6 +4,8 @@ Separate workers use separate PostgreSQL connections and retry whole transaction
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from psycopg2.errors import SerializationFailure, DeadlockDetected
+from psycopg2 import IntegrityError
+from odoo.exceptions import ValidationError
 from odoo import api, SUPERUSER_ID
 
 category = env['nockworks.part.category'].create({'name': 'Concurrency fixture', 'code': '981'})
@@ -44,3 +46,48 @@ assert sorted(item[2] for item in results) == list(range(1, 7)), results
 env.invalidate_all()
 assert env['product.template'].browse(template_id).nw_next_variant == 7
 print('CONCURRENCY PASS: 6 native dynamic variants, 2 simultaneous connections, permanent suffixes 01..06', flush=True)
+
+# A cross-table invariant must fail on real COMMIT, not only when tests force
+# SET CONSTRAINTS. The failed transaction must leave the issued suffix unchanged.
+with env.registry.cursor() as cr:
+    cr.execute('UPDATE product_product SET nw_variant_number = 88 WHERE id = %s', [results[0][0]])
+    try:
+        cr.commit()
+    except IntegrityError as error:
+        assert error.diag.constraint_name == 'nw_reference_owner', error
+        cr.rollback()
+    else:
+        raise AssertionError('Invalid SKU/ledger suffix committed')
+with env.registry.cursor() as cr:
+    cr.execute('SELECT nw_variant_number FROM product_product WHERE id = %s', [results[0][0]])
+    assert cr.fetchone()[0] == results[0][2]
+print('COMMIT INTEGRITY PASS: deferred ownership violation rejected and rolled back', flush=True)
+
+
+def manual_claim(_):
+    barrier.wait(timeout=30)
+    for attempt in range(10):
+        try:
+            with env.registry.cursor() as cr:
+                worker = api.Environment(cr, SUPERUSER_ID, {})
+                product = worker['product.product'].create({'name': 'Competing manual reference', 'default_code': '983-01-0001'})
+                product_id = product.id
+                cr.commit()
+                return 'claimed', product_id
+        except (SerializationFailure, DeadlockDetected):
+            if attempt == 9:
+                raise
+        except ValidationError:
+            return 'rejected', None
+
+
+with ThreadPoolExecutor(max_workers=2) as executor:
+    claims = list(executor.map(manual_claim, range(2)))
+assert sorted(result[0] for result in claims) == ['claimed', 'rejected'], claims
+with env.registry.cursor() as cr:
+    worker = api.Environment(cr, SUPERUSER_ID, {})
+    products = worker['product.product'].search([('default_code', '=', '983-01-0001')])
+    allocations = worker['nockworks.reference.allocation'].sudo().search([('reference', '=', '983-01-0001')])
+    assert len(products) == len(allocations) == 1
+    assert allocations.product_id == products and allocations.family_key == products.product_tmpl_id.id
+print('MANUAL CLAIM RACE PASS: one committed owner, one rejected claimant, no orphan allocations', flush=True)

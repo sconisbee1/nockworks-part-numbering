@@ -1,11 +1,16 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
-from .capability import context, internal
+from .capability import context, internal, require_internal
 from .errors import reference_errors
 
 CLASSIFICATION = ('nw_part_category_id', 'nw_part_type_id')
 SKU_PROTECTED = ('nw_part_number', 'nw_part_number_assigned', 'nw_variant_number')
 FAMILY_PROTECTED = ('nw_base_part_number', 'nw_numbering_state', 'nw_next_variant')
+
+def reject_identifier_defaults(env):
+    protected = SKU_PROTECTED + FAMILY_PROTECTED + ('nw_variant_suffix',)
+    if any('default_' + key in env.context for key in protected):
+        raise ValidationError(env._('Numbering fields cannot be supplied through context defaults. Use the automatic allocation service.'))
 
 
 class ProductProduct(models.Model):
@@ -53,11 +58,13 @@ class ProductProduct(models.Model):
     def create(self, vals_list):
         trusted = internal(self.env)
         if not trusted:
+            reject_identifier_defaults(self.env)
             for vals in vals_list:
                 if any(vals.get(key) for key in SKU_PROTECTED + FAMILY_PROTECTED):
                     raise ValidationError(_('NockWorks identifiers are allocated automatically.'))
-                if vals.get('product_tmpl_id'):
-                    template = self.env['product.template'].browse(vals['product_tmpl_id'])
+                template_id = vals.get('product_tmpl_id', self.env.context.get('default_product_tmpl_id'))
+                if template_id:
+                    template = self.env['product.template'].browse(template_id)
                     template._nw_lock()
                     if template.nw_numbering_state in ('single', 'legacy'):
                         raise UserError(_('Use controlled conversion before creating variants for an issued single SKU or legacy family.'))
@@ -77,7 +84,7 @@ class ProductProduct(models.Model):
     def write(self, vals):
         if internal(self.env):
             return super().write(vals)
-        if any(key in vals for key in SKU_PROTECTED):
+        if any(key in vals for key in SKU_PROTECTED + ('nw_base_part_number', 'nw_variant_suffix')):
             raise ValidationError(_('Assigned numbers and suffixes cannot be edited.'))
         self.product_tmpl_id._nw_lock()
         for product in self:
@@ -99,6 +106,7 @@ class ProductProduct(models.Model):
                     product.product_tmpl_id.write({key: product[key].id for key in CLASSIFICATION})
         return result
 
+    @reference_errors
     def unlink(self):
         self.product_tmpl_id._nw_lock()
         return super().unlink()
@@ -109,8 +117,17 @@ class ProductProduct(models.Model):
         return self.product_tmpl_id.action_generate_nw_part_number()
 
     def _nw_assign(self, reference, suffix=0):
+        require_internal(self.env)
+        self.check_access('write')
         self.ensure_one()
         template = self.product_tmpl_id
+        allocation = self.env['nockworks.reference.allocation'].sudo().search([('reference', '=', reference)], limit=1)
+        if (not allocation or allocation.retired or allocation.product_id != self
+                or allocation.family_id != template or allocation.family_key != template.id
+                or allocation.suffix != suffix or allocation.kind != ('variant' if suffix else 'base')):
+            raise ValidationError(_('Assignment requires an active allocation owned by this SKU and family.'))
+        if self.nw_part_number_assigned and (self.nw_part_number != reference or self.nw_variant_number != suffix):
+            raise ValidationError(_('An issued SKU can only change through reviewed conversion.'))
         self.with_context(**context()).write({
             'nw_part_category_id': template.nw_part_category_id.id,
             'nw_part_type_id': template.nw_part_type_id.id,
@@ -119,9 +136,13 @@ class ProductProduct(models.Model):
         })
 
     def _nw_allocate_suffix(self):
+        require_internal(self.env)
+        self.check_access('write')
         self.ensure_one()
         template = self.product_tmpl_id
         template._nw_lock()
+        if template.nw_numbering_state != 'variants' or not template.nw_base_part_number:
+            raise ValidationError(_('Suffix allocation requires a numbered variant family.'))
         self.invalidate_recordset(list(SKU_PROTECTED) + ['default_code'])
         if self.nw_part_number_assigned:
             return
@@ -175,6 +196,7 @@ class ProductTemplate(models.Model):
     def _nw_lock(self):
         """Serialize family operations; Odoo retries serialization failures at RPC boundary."""
         if self:
+            self.check_access('write')
             self.flush_recordset(list(FAMILY_PROTECTED))
             self.env.cr.execute('SELECT id FROM product_template WHERE id IN %s ORDER BY id FOR UPDATE', [tuple(sorted(self.ids))])
             self.invalidate_recordset(list(FAMILY_PROTECTED) + list(CLASSIFICATION))
@@ -183,6 +205,8 @@ class ProductTemplate(models.Model):
     @reference_errors
     def create(self, vals_list):
         trusted = internal(self.env)
+        if not trusted:
+            reject_identifier_defaults(self.env)
         if not trusted and any(any(vals.get(key) for key in FAMILY_PROTECTED + ('nw_part_number', 'nw_part_number_assigned')) for vals in vals_list):
             raise ValidationError(_('Family identifiers are allocated automatically.'))
         templates = super(ProductTemplate, self.with_context(**context())).create(vals_list)
@@ -219,12 +243,18 @@ class ProductTemplate(models.Model):
             self._nw_ensure_numbered()
         return result
 
+    @reference_errors
+    def unlink(self):
+        self._nw_lock()
+        return super().unlink()
+
     def _nw_has_variants(self):
         self.ensure_one()
         return any(line.attribute_id.create_variant != 'no_variant' and len(line.value_ids) > 1 for line in self.attribute_line_ids)
 
     def _nw_ensure_numbered(self):
-        for template in self.sorted('id'):
+        self.check_access('write')
+        for template in self.with_context(**context()).sorted('id'):
             template._nw_lock()
             if template.nw_numbering_state == 'legacy':
                 continue
@@ -239,7 +269,7 @@ class ProductTemplate(models.Model):
                 base = '%s-%s-%04d' % (template.nw_part_category_id.code, part_type.code, number)
                 variant_family = template._nw_has_variants() or len(products) > 1
                 state = 'variants' if variant_family else 'single'
-                self.env['nockworks.reference.allocation']._reserve(template, base, products[:1] if not variant_family else None)
+                template.env['nockworks.reference.allocation']._reserve(template, base, products[:1] if not variant_family else None)
                 template.with_context(**context()).write({'nw_base_part_number': base, 'nw_numbering_state': state})
                 if not variant_family and products:
                     products._nw_assign(base)
@@ -267,6 +297,7 @@ class ProductTemplate(models.Model):
                 'context': {'default_template_id': self.id}}
 
     def _nw_convert(self, first_value, reason):
+        require_internal(self.env)
         self.ensure_one()
         self.check_access('write')
         if not self.env.user.has_group('stock.group_stock_manager'):
@@ -304,6 +335,8 @@ class ProductTemplate(models.Model):
         return super().copy_data(default=defaults)
 
     def copy(self, default=None):
+        if not internal(self.env):
+            reject_identifier_defaults(self.env)
         self.ensure_one()
         copied = super(ProductTemplate, self.with_context(**context())).copy(default=default)
         copied._nw_ensure_numbered()

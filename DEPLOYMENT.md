@@ -47,3 +47,14 @@ Account explicitly for transactions and issued external labels since the backup;
 never silently reuse a reference already issued outside the restored database.
 For a busy system, prefer a reviewed forward fix to losing post-upgrade business
 transactions. Do not uninstall the addon as a rollback mechanism.
+
+## 19.0.2.1.0 integrity revision
+
+Upgrade from either original main or 19.0.2.0.0 using the reviewed 2.1 migration.
+It normalizes ledger flags, retires departed old claims and installs stronger
+ownership guards without rewriting issued SKU references or business history.
+Expect upgrade to stop if assigned references have invalid ownership or missing/
+inconsistent classifications. Review those records and historical provenance
+before authorizing a corrective data procedure. Previously recorded release
+reasons are retained; unknown historical actors/families must not be invented.
+See INTEGRITY_REVIEW.md for schema and verification evidence.

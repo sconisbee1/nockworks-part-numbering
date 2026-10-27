@@ -1,5 +1,6 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from ..models.capability import context
 
 
 class VariantConversion(models.TransientModel):
@@ -39,7 +40,7 @@ class VariantConversion(models.TransientModel):
         if not self.env.user.has_group('stock.group_stock_manager') or not self.confirmed:
             raise UserError(_('An Inventory manager must explicitly confirm the history review.'))
         with self.env.cr.savepoint():
-            old, new, product_id = self.template_id._nw_convert(self.first_value_id, self.reason)
+            old, new, product_id = self.template_id.with_context(**context())._nw_convert(self.first_value_id, self.reason)
             self.template_id.message_post(body=_(
                 'Approved variant conversion: SKU %(sku)s, %(old)s to %(new)s. Original value: %(value)s. Review: %(reason)s',
                 sku=product_id, old=old, new=new, value=self.first_value_id.display_name, reason=self.reason))

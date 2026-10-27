@@ -65,3 +65,18 @@ consume finite suffix capacity and can create traceability ambiguities.
 * Database superusers and trusted server Python can bypass application security;
   client context flags and ordinary ORM/RPC/import operations cannot.
 * Uninstallation is not a supported rollback: reservations are permanent data.
+
+## Pre-merge integrity revision: 19.0.2.1.0
+
+The ledger now records kind and release timestamp/user/reason; retired is non-null.
+One active allocation may own each SKU. Immutable database guards prevent deleting
+or reassigning an allocation's reference, suffix or product/family snapshots.
+Five triggers/seven SQL functions enforce retirement and cross-table ownership;
+final-state checks are deferred to transaction commit. Archive keeps ownership;
+clear/change/delete retire and detach live ownership without freeing the number.
+
+Protected context defaults are rejected before native create/copy can apply them.
+Private mutation helpers require the unforgeable capability and record access.
+A valid existing allocation must precede assignment. Migration refuses malformed,
+inconsistent or unclassified issued references. See INTEGRITY_REVIEW.md for the
+exact findings, migration behaviour, evidence and remaining historical risks.
