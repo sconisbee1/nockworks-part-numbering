@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_nw_conversion_form" model="ir.ui.view">
+        <field name="name">nockworks.variant.conversion.form</field>
+        <field name="model">nockworks.variant.conversion</field>
+        <field name="arch" type="xml">
+            <form string="Review existing SKU conversion">
+                <div class="alert alert-warning" role="alert">This changes an issued reference. Confirm that the selected attribute value accurately describes the original SKU and its historical transactions. Mixed or unknown history requires a separate operational plan. After conversion, add further values in the native Attributes &amp; Variants page.</div>
+                <group>
+                    <field name="template_id" readonly="1" force_save="1"/>
+                    <field name="preview" readonly="1" nolabel="1"/>
+                    <field name="first_value_id" options="{'no_create': True}"/>
+                    <field name="reason"/>
+                    <field name="confirmed"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" type="object" string="Approve and Convert Original SKU" class="btn-primary"/>
+                    <button special="cancel" string="Cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

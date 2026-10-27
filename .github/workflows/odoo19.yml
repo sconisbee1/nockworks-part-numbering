@@ -1,0 +1,25 @@
+name: Odoo 19 variant numbering
+on:
+  pull_request:
+  push:
+    branches: [feature/product-variant-numbering]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install, browser, concurrency and old-version upgrade
+        run: bash tests/integration/run.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: odoo19-test-evidence
+          path: .test-runtime/artifacts

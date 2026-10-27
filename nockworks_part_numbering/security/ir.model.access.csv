@@ -4,3 +4,5 @@ access_nw_part_category_manager,nockworks.part.category manager,model_nockworks_
 access_nw_part_type_user,nockworks.part.type user,model_nockworks_part_type,base.group_user,1,0,0,0
 access_nw_part_type_manager,nockworks.part.type manager,model_nockworks_part_type,stock.group_stock_manager,1,1,1,1
 
+access_nw_allocation_manager,nw allocation review,model_nockworks_reference_allocation,stock.group_stock_manager,1,0,0,0
+access_nw_conversion_manager,nw conversion review,model_nockworks_variant_conversion,stock.group_stock_manager,1,1,1,1
