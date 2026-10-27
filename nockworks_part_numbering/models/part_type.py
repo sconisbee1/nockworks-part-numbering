@@ -36,9 +36,18 @@ class NockWorksPartType(models.Model):
                 raise ValidationError(_("Part Type code must contain exactly two digits."))
 
     def write(self, vals):
-        if "sequence_exhausted" in vals and not self.env.context.get("nw_sequence_allocation"):
+        if "code" in vals or "category_id" in vals:
+            for part_type in self:
+                changed = vals.get("code", part_type.code) != part_type.code or vals.get("category_id", part_type.category_id.id) != part_type.category_id.id
+                prefix = "%s-%s-%%" % (part_type.category_id.code, part_type.code)
+                if changed and self.env["nockworks.reference.allocation"].sudo().search_count([("reference", "=like", prefix)]):
+                    raise ValidationError(_("Part Type codes used by issued references are immutable."))
+        if "sequence_exhausted" in vals :
             raise ValidationError(_("Sequence exhaustion is managed automatically."))
         if "next_number" in vals:
+            self.flush_recordset(["next_number", "sequence_exhausted"])
+            self.env.cr.execute("SELECT id FROM nockworks_part_type WHERE id IN %s ORDER BY id FOR UPDATE", [tuple(self.ids)])
+            self.invalidate_recordset(["next_number", "sequence_exhausted"])
             new_number = vals["next_number"]
             for part_type in self:
                 if new_number < part_type.next_number:

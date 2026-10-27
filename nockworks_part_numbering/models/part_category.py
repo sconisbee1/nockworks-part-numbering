@@ -24,3 +24,10 @@ class NockWorksPartCategory(models.Model):
         for category in self:
             if not re.fullmatch(r"[0-9]{3}", category.code or ""):
                 raise ValidationError(_("Part Category code must contain exactly three digits."))
+
+    def write(self, vals):
+        if 'code' in vals:
+            for category in self:
+                if vals['code'] != category.code and self.env['nockworks.reference.allocation'].sudo().search_count([('reference', '=like', category.code + '-%')]):
+                    raise ValidationError(_('Category codes used by issued references are immutable.'))
+        return super().write(vals)
