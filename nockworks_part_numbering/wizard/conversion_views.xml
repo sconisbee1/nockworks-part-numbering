@@ -4,15 +4,49 @@
         <field name="name">nockworks.variant.conversion.form</field>
         <field name="model">nockworks.variant.conversion</field>
         <field name="arch" type="xml">
-            <form string="Review existing SKU conversion">
-                <div class="alert alert-warning" role="alert">This changes an issued reference. Confirm that the selected attribute value accurately describes the original SKU and its historical transactions. Mixed or unknown history requires a separate operational plan. After conversion, add further values in the native Attributes &amp; Variants page.</div>
-                <group>
-                    <field name="template_id" readonly="1" force_save="1"/>
-                    <field name="preview" readonly="1" nolabel="1"/>
-                    <field name="first_value_id" options="{'no_create': True}"/>
-                    <field name="reason"/>
-                    <field name="confirmed"/>
-                </group>
+            <form string="Review existing SKU conversion" class="o_nw_conversion_wizard">
+                <div class="container-fluid px-0">
+                    <section class="mb-4" name="nw_original_product">
+                        <separator string="Original product"/>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="template_id" class="form-label d-block"/>
+                                <field name="template_id" readonly="1" force_save="1" nolabel="1" class="w-100"/>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="original_sku_ids" class="form-label d-block"/>
+                                <field name="original_sku_ids" readonly="1" nolabel="1" class="w-100"/>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="existing_reference" class="form-label d-block"/>
+                                <field name="existing_reference" readonly="1" nolabel="1" class="w-100"/>
+                            </div>
+                            <div class="col-12">
+                                <label for="first_value_id" class="form-label d-block"/>
+                                <field name="first_value_id" options="{'no_create': True}" nolabel="1" class="w-100"/>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="mb-4" name="nw_history_review">
+                        <separator string="Historical usage review"/>
+                        <div class="w-100" style="white-space: pre-wrap;">
+                            <field name="history_usage" readonly="1" nolabel="1" class="w-100"/>
+                        </div>
+                        <p class="text-muted mt-2 mb-0">This review does not determine historical material identity. Review source records before confirming. No quantities or historical foreign keys will be changed.</p>
+                    </section>
+                    <section name="nw_conversion_approval">
+                        <separator string="Conversion approval"/>
+                        <div class="mb-3">
+                            <label for="reason" class="form-label d-block"/>
+                            <field name="reason" nolabel="1" class="w-100" placeholder="Document the history reviewed and why the selected attribute value represents the original SKU." style="min-height: 7rem;"/>
+                        </div>
+                        <div class="d-flex align-items-start gap-2 mb-3">
+                            <field name="confirmed" nolabel="1" class="flex-shrink-0"/>
+                            <label for="confirmed" class="mb-0 text-wrap"/>
+                        </div>
+                        <div class="alert alert-warning mb-0" role="alert">This changes an issued reference. Confirm that the selected attribute value accurately describes the original SKU and its historical transactions. Mixed or unknown history requires a separate operational plan. After conversion, add further values in the native Attributes &amp; Variants page.</div>
+                    </section>
+                </div>
                 <footer>
                     <button name="action_confirm" type="object" string="Approve and Convert Original SKU" class="btn-primary"/>
                     <button special="cancel" string="Cancel"/>

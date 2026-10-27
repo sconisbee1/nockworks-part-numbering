@@ -12,11 +12,17 @@ class VariantConversion(models.TransientModel):
     reason = fields.Text(required=True, string='History review and reason')
     confirmed = fields.Boolean(string='I reviewed stock, lots, manufacturing, BoMs and order history; the selected value accurately represents the original SKU.')
     preview = fields.Text(compute='_compute_preview')
+    original_sku_ids = fields.Char(string='Original SKU ID', compute='_compute_preview')
+    existing_reference = fields.Char(string='Existing Internal Reference', compute='_compute_preview')
+    history_usage = fields.Text(string='Historical usage', compute='_compute_preview')
 
     @api.depends('template_id')
     def _compute_preview(self):
         for wizard in self:
             products = wizard.template_id.with_context(active_test=False).product_variant_ids
+            wizard.original_sku_ids = ', '.join(str(product_id) for product_id in products.ids)
+            wizard.existing_reference = ', '.join(products.mapped('default_code') or ['None'])
+            history_lines = []
             lines = ['Original SKU IDs: %s' % products.ids,
                      'Issued references: %s' % ', '.join(products.mapped('default_code') or ['None'])]
             for model, field, label in [
@@ -31,9 +37,12 @@ class VariantConversion(models.TransientModel):
             ]:
                 if model in self.env:
                     count = self.env[model].sudo().with_context(active_test=False).search_count([(field, 'in', products.ids)])
-                    lines.append('%s: %s' % (label, count))
+                    usage_line = '%s: %s' % (label, count)
+                    lines.append(usage_line)
+                    history_lines.append(usage_line)
             lines.append('This review does not determine historical material identity. Review source records before confirming. No quantities or historical foreign keys will be changed.')
             wizard.preview = '\n'.join(lines)
+            wizard.history_usage = '\n'.join(history_lines)
 
     def action_confirm(self):
         self.ensure_one()

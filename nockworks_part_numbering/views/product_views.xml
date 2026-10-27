@@ -6,15 +6,27 @@
         <field name="inherit_id" ref="product.product_template_only_form_view"/>
         <field name="arch" type="xml">
             <xpath expr="//sheet[@name='product_form']/notebook" position="before">
-                <group string="NockWorks Part Number" name="nw_part_numbering" invisible="is_product_variant">
+                <div name="nw_part_numbering" class="row g-3 mb-3" invisible="is_product_variant">
                     <field name="nw_numbering_state" invisible="1"/>
-                    <field name="nw_base_part_number" readonly="1"/>
-                    <field name="nw_part_category_id" readonly="nw_numbering_state != 'none'" options="{'no_create': True, 'no_create_edit': True}"/>
-                    <field name="nw_part_type_id" domain="[('category_id', '=', nw_part_category_id)]" readonly="nw_numbering_state != 'none'" options="{'no_create': True, 'no_create_edit': True}"/>
-                    <button name="action_generate_nw_part_number" type="object" string="Generate Part Number" invisible="nw_numbering_state != 'none' or not nw_part_category_id or not nw_part_type_id"/>
-                    <button name="action_nw_convert" type="object" string="Review Conversion to Variants" groups="stock.group_stock_manager" invisible="nw_numbering_state != 'single'"/>
-                    <div class="alert alert-warning" role="alert" invisible="nw_numbering_state != 'legacy'">Existing independently numbered SKUs are preserved. This family requires a separately reviewed conversion.</div>
-                </group>
+                    <div class="col-12 col-md-4">
+                        <label for="nw_base_part_number" class="form-label d-block"/>
+                        <field name="nw_base_part_number" readonly="1" nolabel="1" class="w-100"/>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label for="nw_part_category_id" class="form-label d-block"/>
+                        <field name="nw_part_category_id" readonly="nw_numbering_state != 'none'" options="{'no_create': True, 'no_create_edit': True}" nolabel="1" class="w-100"/>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label for="nw_part_type_id" class="form-label d-block"/>
+                        <field name="nw_part_type_id" domain="[('category_id', '=', nw_part_category_id)]" readonly="nw_numbering_state != 'none'" options="{'no_create': True, 'no_create_edit': True}" nolabel="1" class="w-100"/>
+                    </div>
+                    <div class="col-12" invisible="nw_numbering_state != 'none' or not nw_part_category_id or not nw_part_type_id">
+                        <button name="action_generate_nw_part_number" type="object" string="Generate Part Number"/>
+                    </div>
+                    <div class="col-12" invisible="nw_numbering_state != 'legacy'">
+                        <div class="alert alert-warning mb-0" role="alert">Existing independently numbered SKUs are preserved. This family requires a separately reviewed conversion.</div>
+                    </div>
+                </div>
             </xpath>
         </field>
     </record>
@@ -72,5 +84,14 @@
                 <filter name="nw_group_base" string="Base NockWorks Part Number" context="{'group_by': 'nw_base_part_number'}"/>
             </filter>
         </field>
+    </record>
+    <record id="action_nw_review_conversion" model="ir.actions.server">
+        <field name="name">Review Conversion to Variants</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">form</field>
+        <field name="group_ids" eval="[(6, 0, [ref('stock.group_stock_manager')])]"/>
+        <field name="state">code</field>
+        <field name="code">action = records.action_nw_convert()</field>
     </record>
 </odoo>
