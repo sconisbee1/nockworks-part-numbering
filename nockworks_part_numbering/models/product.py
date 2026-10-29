@@ -82,10 +82,18 @@ class ProductProduct(models.Model):
 
     @reference_errors
     def write(self, vals):
+        # Onchange records (including NewId(origin=...)) are cache-only. Never
+        # flush, lock or allocate for them, and never replace them by _origin.
+        if not internal(self.env) and any(key in vals for key in SKU_PROTECTED + ('nw_base_part_number', 'nw_variant_suffix')):
+            raise ValidationError(_('Assigned numbers and suffixes cannot be edited.'))
+        drafts = self.filtered(lambda record: not record.id)
+        if drafts:
+            drafts.update(vals)
+            self = self - drafts
+        if not self:
+            return True
         if internal(self.env):
             return super().write(vals)
-        if any(key in vals for key in SKU_PROTECTED + ('nw_base_part_number', 'nw_variant_suffix')):
-            raise ValidationError(_('Assigned numbers and suffixes cannot be edited.'))
         self.product_tmpl_id._nw_lock()
         for product in self:
             if product.nw_part_number_assigned:
@@ -195,6 +203,7 @@ class ProductTemplate(models.Model):
 
     def _nw_lock(self):
         """Serialize family operations; Odoo retries serialization failures at RPC boundary."""
+        self = self.filtered(lambda template: bool(template.id))
         if self:
             self.check_access('write')
             self.flush_recordset(list(FAMILY_PROTECTED))
@@ -216,10 +225,16 @@ class ProductTemplate(models.Model):
 
     @reference_errors
     def write(self, vals):
+        if not internal(self.env) and any(key in vals for key in FAMILY_PROTECTED + ('nw_part_number', 'nw_part_number_assigned')):
+            raise ValidationError(_('Family identifiers and counters cannot be edited.'))
+        drafts = self.filtered(lambda record: not record.id)
+        if drafts:
+            drafts.update(vals)
+            self = self - drafts
+        if not self:
+            return True
         if internal(self.env):
             return super().write(vals)
-        if any(key in vals for key in FAMILY_PROTECTED + ('nw_part_number', 'nw_part_number_assigned')):
-            raise ValidationError(_('Family identifiers and counters cannot be edited.'))
         self._nw_lock()
         for template in self:
             if template.nw_numbering_state != 'none' and any(key in vals and vals[key] != template[key].id for key in CLASSIFICATION):
@@ -254,7 +269,8 @@ class ProductTemplate(models.Model):
 
     def _nw_ensure_numbered(self):
         self.check_access('write')
-        for template in self.with_context(**context()).sorted('id'):
+        # NewId may expose an origin through .ids; only actual saved records qualify.
+        for template in self.filtered(lambda record: bool(record.id)).with_context(**context()).sorted('id'):
             template._nw_lock()
             if template.nw_numbering_state == 'legacy':
                 continue

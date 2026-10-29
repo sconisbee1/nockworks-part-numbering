@@ -91,3 +91,26 @@ with env.registry.cursor() as cr:
     assert len(products) == len(allocations) == 1
     assert allocations.product_id == products and allocations.family_key == products.product_tmpl_id.id
 print('MANUAL CLAIM RACE PASS: one committed owner, one rejected claimant, no orphan allocations', flush=True)
+
+# Concurrent base-family creation uses the same atomic classification counter.
+def create_family(index):
+    barrier.wait(timeout=30)
+    for attempt in range(10):
+        try:
+            with env.registry.cursor() as cr:
+                worker = api.Environment(cr, SUPERUSER_ID, {})
+                product = worker['product.product'].create({
+                    'name': 'Concurrent new RFQ product %s' % index,
+                    'nw_part_category_id': category.id, 'nw_part_type_id': part_type.id})
+                result = product.id, product.default_code
+                cr.commit()
+                return result
+        except (SerializationFailure, DeadlockDetected):
+            if attempt == 9:
+                raise
+
+with ThreadPoolExecutor(max_workers=2) as executor:
+    families = list(executor.map(create_family, range(2)))
+assert len({item[0] for item in families}) == 2, families
+assert {item[1] for item in families} == {'981-01-0002', '981-01-0003'}, families
+print('FAMILY CREATION RACE PASS: simultaneous product creation allocated distinct permanent base references', flush=True)
